@@ -566,3 +566,7 @@ Conversion Flags
                     ]                   # endwhile @CMP_FLAG
                <                   # goto LOOP_FLAG
           ]                   # endwhile @LOOP_FLAG
+
+# PRINT RESULT
+     >>>>>>>>>>>>>>>>>>>>     # goto Output list; zip to first open; step to last filled; print
+          >>>>[>]<[.<]
