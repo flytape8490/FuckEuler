@@ -9,8 +9,8 @@
 			place-value arithmetic algorithms for the addition and subtraction when 
 			calculating the Fibonacci numbers and the sums (basically implementing what you 
 			would call long-addition and long-subtraction when doing this by hand). While 
-			this results in more complex code, it speeds up the total execution significantly 
-			as the code is not adding large numbers by subtracting one from one cell and 
+			this results in more complex code, it speeds up the execution significantly as 
+			the interpreter is not adding large numbers by subtracting one from one cell and 
 			adding one to another one by one, hundreds or even thousands of times (or in this 
 			case, up to 4 million times). I could have sped this up even further by 
 			implementing place-value division for the conversion to base-10 at the end, but 
