@@ -5,7 +5,7 @@
 			By considering the terms in the Fibonacci sequence whose values do not exceed 
 			four million, find the sum of the even-valued terms.
 
-			There are only two optimizations beyond the naïve case is that I've implemented
+			There is only one optimization beyond the naïve case: I've implemented 
 			place-value arithmetic algorithms for the addition and subtraction when 
 			calculating the Fibonacci numbers and the sums (basically implementing what you 
 			would call long-addition and long-subtraction when doing this by hand). While 
