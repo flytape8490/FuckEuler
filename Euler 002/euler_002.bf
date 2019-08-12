@@ -48,16 +48,16 @@ Even Flags
      027  N         N_F       N_B
 
 Conversion Flags
-     015  LOOP_FLAG CMP_FLAG
-     017  WORK'2    WORK'2_F  WORK'2_B
-     020  WORK'1    WORK'1_F  WORK'1_B
-     023  WORK'0    WORK'0_F  WORK'0_B
-     026  NOT'0     NOT'0_F   NOT'0_B
-     029  MOD       MOD_F     MOD_B
+     015  LOOP_FLAG      CMP_FLAG
+     017  WORK'2         WORK'2_F       WORK'2_B
+     020  WORK'1         WORK'1_F       WORK'1_B
+     023  WORK'0         WORK'0_F       WORK'0_B
+     026  NOT'0          NOT'0_F        NOT'0_B
+     029  MOD            MOD_F          MOD_B
      032  Q'2
-     033  Q'1       Q'1_F     Q'1_B
-     036  Q'0       Q'0_F     Q'0_B
-     039  NUMBER_END:: last filled|first empty
+     033  Q'1            Q'1_F          Q'1_B
+     036  Q'0            Q'0_F          Q'0_B
+     039  Output
 
 # INITIALIZE
      >>>>>>>>>>>>>>+     # goto A0; set 1
@@ -404,36 +404,36 @@ Conversion Flags
           <[->+<]             # goto SUM'0; cut SUM'0:17; endcut @16
      # USE CONVERSION FLAGS
      # Conversion
-          <+                  # goto LOOP_FLAG; set TRUE
+          <+        # goto LOOP_FLAG; set TRUE
           [                   # while LOOP_FLAG == TRUE
                # Division Setup
-                    # Cut SUM:WORK
-                         >>>>>>>>>>>[-]      # goto NOT'0; drain
-                         >>>++++++++++       # goto MOD; set 10
+                    >>>>>>>>>>>>>>+     # goto MOD; set 10
+                         +++++++++
                # Division
                     <<<<<<<<<<<<<+      # goto CMP_FLAG; set TRUE
                     [                   # while CMP_FLAG == TRUE
-                         # Check if WORK != 0
+                         # Check if WORK != 0; store result in NOT'0
+                              # tested: checking 0 first results in fewer executions
                               >>>>>>>>+           # goto WORK'0_F; set TRUE
                               <                   # goto WORK'0
                               [                   # if WORK'0 != 0
-                                   >>>+                # goto NOT'0; set TRUE
+                                   >>>[-]+             # goto NOT'0; clear; set TRUE
                                    <<-                 # goto WORK'0_F; set FALSE
                               ]>[                 # elif WORK'0 == 0
                                    -                   # WORK'0_F set FALSE
                                    <<<+                # goto WORK'1_F; set TRUE
                                    <                   # goto WORK'1
                                    [                   # if WORK'1 != 0
-                                        >>>>>>+             # goto NOT'0; set TRUE
+                                        >>>>>>[-]+          # goto NOT'0; clear; set TRUE
                                         <<<<<-              # goto WORK'1_F; set FALSE
                                    ]>[                 # elif WORK'1 == 0
                                         -                   # WORK'1_F set FALSE
-                                        <<<+                # goto WORK'2_F; set TRUE
-                                        <                   # goto WORK'2
+                                        <<<+                # goto WORK'2_F set TRUE
+                                        <                   # goto WORK_2
                                         [                   # if WORK'2 != 0
-                                             >>>>>>>>>+          # goto NOT'0; set TRUE
+                                             >>>>>>>>>[-]+       # goto NOT'0; clear; set TRUE
                                              <<<<<<<<-           # goto WORK'2_F; set FALSE
-                                        ]>[                 # elif WORK'2 == 0:
+                                        ]>[                 # elif WORK'2 == 0
                                              -                   # WORK'2_F set FALSE
                                              >                   # goto WORK'2_B
                                         ]                   # endif @WORK'2_B
@@ -441,13 +441,15 @@ Conversion Flags
                                    ]                   # endif @WORK'1_B
                                    >>>                 # goto WORK'0_B
                               ]                   # endif @WORK'0_B
-                         # Comparison
+                         # Division
                               >>+                 # goto NOT'0_F; set TRUE
                               <                   # goto NOT'0
-                              [                   # if WORK != 0 (NOT'0 == TRUE)
+                              [                   # if NOT'0 == TRUE (if WORK != 0)
                                    >>>>+               # goto MOD_F; set TRUE
                                    <                   # goto MOD
                                    [                   # if MOD != 0
+                                        # Continue Subtraction
+                                        -                   # MOD subtract 1
                                         # WORK subtract 1
                                              <<<<<+              # goto WORK'0_F; set TRUE
                                              <                   # goto WORK'0
@@ -456,42 +458,31 @@ Conversion Flags
                                                   >-                  # goto WORK'0_F; set FALSE
                                              ]>[                 # elif WORK'0 == 0
                                                   -                   # WORK'0_F set FALSE
-                                                  <<<+                # goto WORK'1_F; set TRUE
+                                                  <-                  # goto WORK'0; subtract 1
+                                                  <<+                 # goto WORK'1_F; set TRUE
                                                   <                   # goto WORK'1
                                                   [                   # if WORK'1 != 0
                                                        -                   # WORK'1 subtract 1
-                                                       >>>-                # WORK'0 subtract 1
-                                                       <<-                 # goto WORK'1_F; set FALSE
+                                                       >-                  # goto WORK'1_F; set FALSE
                                                   ]>[                 # elif WORK'1 == 0
                                                        -                   # WORK'1_F set FALSE
-                                                       <<<+                # goto WORK'2_F; set TRUE
-                                                       <                   # goto WORK'2
-                                                       [                   # if WORK'2 != 0
-                                                            -                   # WORK'2 subtract 1
-                                                            >>>-                # goto WORK'1; subtract 1
-                                                            >>>-                # goto WORK'0; subtract 1
-                                                            <<<<<-              # goto WORK'2_F; set FALSE
-                                                       ]>[                 # elif WORK'2 == 0
-                                                            -                   # WORK'2 set FALSE
-                                                            [BREAK: The code should not have made it to this point]
-                                                            [This suggests that I might not need the WORK'2 flags]
-                                                            >                   # goto WORK'2_B
-                                                       ]                   # endif @WORK'2_B
-                                                       >>>                 # goto WORK'1_B
+                                                       <-                  # goto WORK'1; subtract 1
+                                                       # WORK'2 is unlikely to underflow: do not need to test
+                                                       <<<-                # goto WORK'2; subtract 1
+                                                       >>>>>               # goto WORK'1_B
                                                   ]                   # endif @WORK'1_B
                                                   >>>                 # goto WORK'0_B
                                              ]                   # endif @WORK'0_B
-                                        >>>>-               # goto MOD; subtract 1
-                                        >-                  # goto MOD_F; set FALSE
+                                        >>>>>-              # goto MOD_F; set FALSE
                                    ]>[                 # elif MOD == 0
-                                        # WORK GT MOD: INCREMENT Q
+                                        # WORK gt MOD: increment Q
                                         -                   # MOD_F set FALSE
                                         <<<<<<<<<<<<<<-     # goto CMP_FLAG; set FALSE
                                         # Q add 1
                                              >>>>>>>>>>>>>>>     # goto Q'0_F; set TRUE
                                                   >>>>>>+
                                              <+                  # goto Q'0; add 1
-                                             [                   # if Q'0 != 0:
+                                             [                   # if Q'0 != 0
                                                   >-                  # goto Q'0_F; set FALSE
                                              ]>[                 # elif Q'0 == 0
                                                   -                   # Q'0_F set FALSE
@@ -503,38 +494,47 @@ Conversion Flags
                                                        -                   # Q'1_F set FALSE
                                                        <<+                 # goto Q'2; add 1
                                                        >>>                 # goto Q'1_B
-                                                  ]                   # endif @ Q'1_B
+                                                  ]                   # endif @Q'1_B
                                                   >>>                 # goto Q'0_B
                                              ]                   # endif @ Q'0_B
-                                        <<<<<<<             # goto MOD_B
+                                        <<<<<<<                  # goto MOD_B
                                    ]                   # endif @MOD_B
                                    <<<<-               # goto NOT'0_F; set FALSE
-                              ]>[                 # elif WORK == 0 (NOT'0 == FALSE
-                                   # WORK IS LTE MOD
+                              ]>[                 # elif NOT'0 == FALSE (elif WORK == 0)
                                    -                   # NOT'0_F set FALSE
-                                   <<<<<<<<<<<-        # goto CMP_FLAG; set FALSE
-                                   # Print MOD (backwards temporarially)
-                                        >>>>>>>>>>>>>>+     # goto MOD_F; set 10
-                                             +++++++++
-                                        <[->-<]             # goto MOD; MOD_F minus MOD; end @MOD
-                                        >>++++++[-<++++     # goto MOD_B;  multiply 6 * 8 = 48 into MOD_F
-                                             ++++>]         # endmult @ MOD_B
-                                        <.[-]               # endwhile @MOD_F
-                                   # Cut Q:WORK via MOD'B
-                                        >>                  # goto Q'2
-                                        [-<+<<<<<<<<<<<     # cut Q'2:WORK'2
+                                   # Move MOD to Output List
+                                        # Convert MOD into an ascii numeral
+                                             >>>++++++++++       # goto MOD_F; set 10
+                                             <[->-<]             # 10 minus MOD into MOD_F; endminus @MOD
+                                             >[->+<]             # goto MOD_F; cut MOD_F:MOD_B; endcut @MOD_F
+                                             <++++++[->+++++     # goto MOD; MOD_F set 6 * 8 = 48; endset @MOD
+                                                  +++<]
+                                        # Move first unit without loop (ensures ZIP behaves predictably)
+                                             >>[-<+>]            # goto MOD_B; cut MOD_B:MOD_F; endcut @MOD_B
+                                             <-                  # goto MOD_F; subtract 1 (manually handles first operation of move so zip functions predictably)
+                                             >>>>>>>>>[>]+       # goto Output; zip to first open; add 1
+                                        # Move remaining unit with loop
+                                             [<]<<<<<<<<         # zip to Q'0_B; goto MOD_F
+                                             [                   # while MOD_F != 0
+                                                  -                   # MOD_F subtract 1
+                                                  >>>>>>>>>[>]        # goto Output; zip to first open; step to last occupied; add 1
+                                                  <+                  # step to last occupied number; add 1
+                                                  [<]<<<<<<<<         # zip to Q'0_B; goto MOD_F
+                                             ]                   # endwhile @MOD_F
+                                   & DUMP THE VALUES HERE AND MAKE SURE THAT WORK IS ALL ZEROES
+                                   # Cut Q:WORK
+                                        >>[-<<<<<<<<<<<          # goto Q'2; cut Q'2:WORK'2
+                                             <<<<+>>>>>
+                                             >>>>>>>>>>]         # endcut @Q'2
+                                        >[-<<<<<<<<<<<<          # goto Q'1; cut Q'1:WORK'1
+                                             <+>>>>>>>>
+                                             >>>>>]              # endcut @Q'1
+                                        >>>[-<<<<<<<<<<          # goto Q'0; cut Q'0:WORK'0
                                              <<<+>>>>>>
-                                             >>>>>>>>>]     # endcut @Q'2
-                                        >                   # goto Q'1
-                                        [-<<+<<<<<<<<<<     # cut Q'1:WORK'1
-                                             <+>>>>>>>>
-                                             >>>>>]         # endcut @Q'1
-                                        >>>                 # goto Q'0
-                                        [-<<<<<+<<<<<<<     # cut Q'0:WORK'0
-                                             <+>>>>>>>>
-                                             >>>>>]         # endcut @Q'0
-                                   # Check if WORK != 0
-                                        <<<<<<<<<<<<+       # goto WORK'0_F; set TRUE
+                                             >>>>>>>]            # endcut @Q'0
+                                   <<<<<<<<<<<<<<<<<<<<-    # goto CMP_FLAG; set FALSE
+                                   # Check if WORK != 0; if zero: LOOP_FLAG set FALSE
+                                        >>>>>>>>+           # goto WORK'0_F; set TRUE
                                         <                   # goto WORK'0
                                         [                   # if WORK'0 != 0
                                              >-                  # goto WORK'0_F; set FALSE
@@ -543,27 +543,27 @@ Conversion Flags
                                              <<<+                # goto WORK'1_F; set TRUE
                                              <                   # goto WORK'1
                                              [                   # if WORK'1 != 0
-                                                  >-                  # goto WORK'1_F; set FALSE
+                                                  >-             # goto WORK'1_F; set FALSE
                                              ]>[                 # elif WORK'1 == 0
                                                   -                   # WORK'1_F set FALSE
-                                                  <<<+                # goto WORK'2_F; set TRUE
-                                                  <                   # goto WORK'2
+                                                  <<<+                # goto WORK'2_F set TRUE
+                                                  <                   # goto WORK_2
                                                   [                   # if WORK'2 != 0
-                                                       >-                  # goto WORK'2_F; set FALSE
-                                                  ]>[                 # elif WORK'2 == 0:
-                                                       # WORK EQ ZERO
+                                                       >-             # goto WORK'2_F; set FALSE
+                                                  ]>[                 # elif WORK'2 == 0
                                                        -                   # WORK'2_F set FALSE
-                                                       <<<-                # goto LOOP_FLAG; set 0
+                                                       <<<-                # goto LOOP_FLAG; set FALSE
                                                        >>>>                # goto WORK'2_B
                                                   ]                   # endif @WORK'2_B
                                                   >>>                 # goto WORK'1_B
                                              ]                   # endif @WORK'1_B
                                              >>>                 # goto WORK'0_B
                                         ]                   # endif @WORK'0_B
-                                   >>>                 # goto NOT_0'B
+                                   >>>            # goto NOT'0_B
                               ]                   # endif @NOT'0_B
-                         <<<<<<<<<<<<        # goto CMP_FLAG
-                    ]                   # endwhile @CMP_FLAG
+                              <<[-]               # goto NOT'0; clear
+                              <<<<<<<<<<          # goto CMP_FLAG
+                    ]                   # endwhile CMP_FLAG
                <                   # goto LOOP_FLAG
           ]                   # endwhile @LOOP_FLAG
 
